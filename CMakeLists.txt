@@ -50,8 +50,11 @@ target_include_directories(
 target_link_libraries(mcp-lldb-core PUBLIC mcp::sdk_static LLDB::LLDB)
 # Debian and Ubuntu install liblldb apart from the lldb-server it starts
 # processes with; tell the server where the LLVM install it was built against
-# keeps it.
-if(LLDB_LIBRARY_DIR AND EXISTS "${LLDB_LIBRARY_DIR}/../bin/lldb-server")
+# keeps it. On macOS processes are started by Apple's debugserver, which the
+# server finds itself, as lldb-server cannot do it there.
+if(NOT APPLE
+   AND LLDB_LIBRARY_DIR
+   AND EXISTS "${LLDB_LIBRARY_DIR}/../bin/lldb-server")
   get_filename_component(_mcp_lldb_server
                          "${LLDB_LIBRARY_DIR}/../bin/lldb-server" ABSOLUTE)
   target_compile_definitions(mcp-lldb-core
