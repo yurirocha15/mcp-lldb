@@ -59,13 +59,13 @@ jobs:
           ./build/mcp-lldb --help
 
   macos:
-    name: macOS (Homebrew LLVM)
+    name: macOS (Homebrew LLDB)
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
 
       - name: Install dependencies
-        run: brew install llvm boost nlohmann-json openssl ninja
+        run: brew install lldb boost nlohmann-json openssl ninja
 
       - name: Allow debugging
         run: sudo DevToolsSecurity -enable
@@ -78,7 +78,7 @@ jobs:
         run: >
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-          -DLLDB_ROOT="$(brew --prefix llvm)"
+          -DLLDB_ROOT="$(brew --prefix lldb)"
           -DOPENSSL_ROOT_DIR="$(brew --prefix openssl)"
 
       - name: Build
@@ -94,6 +94,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.x"
+          # cmake-format 0.6 fails on Python 3.15 ("Cannot use capturing groups in re.Scanner").
+          python-version: "3.12"
       - run: pip install pre-commit
       - run: pre-commit run --all-files --show-diff-on-failure

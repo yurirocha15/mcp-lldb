@@ -54,8 +54,8 @@ cmake --build build
 macOS with Homebrew:
 
 ```bash
-brew install cmake llvm boost nlohmann-json openssl
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DLLDB_ROOT="$(brew --prefix llvm)" \
+brew install cmake lldb boost nlohmann-json openssl
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DLLDB_ROOT="$(brew --prefix lldb)" \
       -DOPENSSL_ROOT_DIR="$(brew --prefix openssl)"
 cmake --build build
 ```
@@ -154,7 +154,7 @@ Run it only for clients you trust.
 ## Platforms
 
 Developed and tested on Linux (Ubuntu 24.04 with LLVM 18). CI builds and tests it on Ubuntu with
-LLVM 18 and 22 and on macOS with Homebrew's LLVM. Windows is not supported yet.
+LLVM 18 and 22 and on macOS with Homebrew's LLDB. Windows is not supported yet.
 
 On Linux, attaching to a process the server did not start needs ptrace permission for it (see
 `/proc/sys/kernel/yama/ptrace_scope`).

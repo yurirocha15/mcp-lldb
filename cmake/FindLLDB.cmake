@@ -2,7 +2,8 @@
 #
 # Looks in LLDB_ROOT when it is set, then in the prefix of each llvm-config it
 # finds (newest version first), then in the usual LLVM locations of Debian and
-# Ubuntu (/usr/lib/llvm-N), Homebrew and the LLVM Windows installer.
+# Ubuntu (/usr/lib/llvm-N), Homebrew (its lldb and llvm formulas) and the LLVM
+# Windows installer.
 #
 # Defines the imported target LLDB::LLDB and sets LLDB_FOUND, LLDB_VERSION,
 # LLDB_INCLUDE_DIR, LLDB_LIBRARY and LLDB_LIBRARY_DIR.
@@ -42,8 +43,15 @@ foreach(_v IN LISTS _lldb_versions)
   list(APPEND _lldb_hints "/usr/lib/llvm-${_v}" "/usr/local/opt/llvm@${_v}"
        "/opt/homebrew/opt/llvm@${_v}")
 endforeach()
-list(APPEND _lldb_hints /opt/homebrew/opt/llvm /usr/local/opt/llvm
-     "C:/Program Files/LLVM")
+# Homebrew ships LLDB as its own formula, apart from llvm.
+list(
+  APPEND
+  _lldb_hints
+  /opt/homebrew/opt/lldb
+  /usr/local/opt/lldb
+  /opt/homebrew/opt/llvm
+  /usr/local/opt/llvm
+  "C:/Program Files/LLVM")
 list(REMOVE_DUPLICATES _lldb_hints)
 
 find_path(
@@ -67,13 +75,15 @@ find_library(
   NO_DEFAULT_PATH)
 find_library(LLDB_LIBRARY NAMES lldb liblldb)
 
-# The version: from the directory name of a versioned LLVM install, else from
+# The version: from the directory name of a versioned install (/usr/lib/llvm-18,
+# Homebrew's Cellar/lldb/23.1.6 behind its opt/ link), else from
 # lldb/Version/Version.inc when it is installed. SBWatchpointOptions.h appeared
 # in LLDB 18, the oldest version this project builds against.
 set(LLDB_VERSION "")
 if(LLDB_INCLUDE_DIR)
-  if(LLDB_INCLUDE_DIR MATCHES "llvm[-@]([0-9]+)")
-    set(LLDB_VERSION "${CMAKE_MATCH_1}")
+  get_filename_component(_lldb_real_include "${LLDB_INCLUDE_DIR}" REALPATH)
+  if(_lldb_real_include MATCHES "(llvm|lldb)[-@/]([0-9]+)")
+    set(LLDB_VERSION "${CMAKE_MATCH_2}")
   elseif(EXISTS "${LLDB_INCLUDE_DIR}/lldb/Version/Version.inc")
     file(STRINGS "${LLDB_INCLUDE_DIR}/lldb/Version/Version.inc" _lldb_major
          REGEX "#define LLDB_VERSION_MAJOR [0-9]+")
