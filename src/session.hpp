@@ -51,6 +51,8 @@ struct BreakpointRequest {
     std::optional<std::uint32_t> line;
     std::optional<std::string> function;
     std::optional<std::string> regex;
+    /// Limits function and regex breakpoints to the module with this file name.
+    std::optional<std::string> module;
     std::optional<std::string> address;
     std::optional<std::string> condition;
     std::optional<std::uint32_t> ignore_count;

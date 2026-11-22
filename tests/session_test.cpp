@@ -115,6 +115,8 @@ TEST_F(SessionTest, LaunchStopsAtAFunctionBreakpointWithArguments) {
     session_->create_target(sample_program(), std::nullopt);
     BreakpointRequest request;
     request.function = "add";
+    // System libraries can have methods named add too (macOS's libobjc does).
+    request.module = std::filesystem::path(sample_program()).filename().string();
     const json breakpoint = session_->set_breakpoint(request);
     EXPECT_EQ(breakpoint["locations"].size(), 1U) << breakpoint.dump();
 
@@ -130,6 +132,15 @@ TEST_F(SessionTest, LaunchStopsAtAFunctionBreakpointWithArguments) {
     EXPECT_EQ(vars["variables"][0]["value"], "3");
     EXPECT_EQ(vars["variables"][1]["name"], "b");
     EXPECT_EQ(vars["variables"][1]["value"], "4");
+}
+
+TEST_F(SessionTest, AModuleLimitsWhereAFunctionBreakpointResolves) {
+    session_->create_target(sample_program(), std::nullopt);
+    BreakpointRequest request;
+    request.function = "add";
+    request.module = "libnot-loaded.so";
+    const json breakpoint = session_->set_breakpoint(request);
+    EXPECT_TRUE(breakpoint["locations"].empty()) << breakpoint.dump();
 }
 
 TEST_F(SessionTest, LaunchKeepsBreakpointsOfTheLoadedProgram) {

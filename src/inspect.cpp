@@ -602,9 +602,11 @@ nlohmann::json Session::set_breakpoint(const BreakpointRequest& request) {
     if (request.file && request.line) {
         breakpoint = target.BreakpointCreateByLocation(request.file->c_str(), *request.line);
     } else if (request.function) {
-        breakpoint = target.BreakpointCreateByName(request.function->c_str());
+        breakpoint = target.BreakpointCreateByName(request.function->c_str(),
+                                                   request.module ? request.module->c_str() : nullptr);
     } else if (request.regex) {
-        breakpoint = target.BreakpointCreateByRegex(request.regex->c_str());
+        breakpoint = target.BreakpointCreateByRegex(request.regex->c_str(),
+                                                    request.module ? request.module->c_str() : nullptr);
     } else if (request.address) {
         breakpoint = target.BreakpointCreateByAddress(resolve_address(*request.address, {}));
     } else {

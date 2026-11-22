@@ -113,7 +113,7 @@ Then ask, for example: *"./build/app crashes when given input.txt. Find out why.
 | `interrupt` | Pause a running process |
 | `terminate` | Kill the process or detach from it |
 | `status` | The target, the process state and where it stopped |
-| `set_breakpoint` | By file and line, function, regex or address; with a condition, ignore count or one-shot |
+| `set_breakpoint` | By file and line, function, regex or address, optionally in one module; with a condition, ignore count or one-shot |
 | `list_breakpoints` | Breakpoints and watchpoints with their locations and hit counts |
 | `delete_breakpoint` | Delete a breakpoint or a watchpoint |
 | `set_watchpoint` | Stop when a variable or an address range is written or read |

@@ -336,8 +336,14 @@ void add_breakpoint_tools(mcp::Server& server, Session& session) {
              object_schema(
                  {{"file", property("string", "Source file, as a path or a file name; with line")},
                   {"line", property("integer", "Line number; with file")},
-                  {"function", property("string", "Function name, such as main or Foo::bar")},
+                  {"function", property("string",
+                                        "Function name, such as main or Foo::bar. A bare name also "
+                                        "matches methods of that name, in every library unless "
+                                        "module is given")},
                   {"regex", property("string", "Regular expression matching function names")},
+                  {"module", property("string",
+                                      "Only in this module, by file name, such as the program's "
+                                      "or libfoo.so; with function or regex")},
                   {"address", property("string", "Address, or an expression giving one")},
                   {"condition", property("string",
                                          "Stop only when this expression is true, such as "
@@ -351,6 +357,7 @@ void add_breakpoint_tools(mcp::Server& server, Session& session) {
             request.line = uint_arg(args, "line");
             request.function = string_arg(args, "function");
             request.regex = string_arg(args, "regex");
+            request.module = string_arg(args, "module");
             request.address = string_arg(args, "address");
             request.condition = string_arg(args, "condition");
             request.ignore_count = uint_arg(args, "ignore_count");
