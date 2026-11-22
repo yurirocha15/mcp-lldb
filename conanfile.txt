@@ -1,0 +1,17 @@
+# Dependencies for building without system packages:
+#   conan install . --build=missing -s compiler.cppstd=20
+#   cmake --preset conan-release && cmake --build --preset conan-release
+[requires]
+boost/1.86.0
+nlohmann_json/3.12.0
+gtest/1.17.0
+
+[options]
+boost/*:header_only=True
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[layout]
+cmake_layout

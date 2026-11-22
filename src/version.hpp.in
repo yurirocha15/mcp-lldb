@@ -1,0 +1,7 @@
+#pragma once
+
+namespace mcp_lldb {
+
+inline constexpr const char* g_VERSION = "@PROJECT_VERSION@";
+
+}  // namespace mcp_lldb

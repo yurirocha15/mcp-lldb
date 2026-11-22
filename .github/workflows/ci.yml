@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  linux:
+    name: Linux (LLVM ${{ matrix.llvm }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # 18 is Ubuntu 24.04's own LLVM; the newest stable release comes from apt.llvm.org.
+        llvm: [18, 22]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install LLVM ${{ matrix.llvm }} from apt.llvm.org
+        if: matrix.llvm != 18
+        run: |
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+          echo "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-${{ matrix.llvm }} main" | sudo tee /etc/apt/sources.list.d/llvm.list
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            liblldb-${{ matrix.llvm }}-dev lldb-${{ matrix.llvm }} \
+            libboost-dev nlohmann-json3-dev libssl-dev ninja-build gdb
+
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: linux-llvm${{ matrix.llvm }}
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          -DLLDB_ROOT=/usr/lib/llvm-${{ matrix.llvm }}
+
+      - name: Build
+        run: cmake --build build --parallel 4
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --timeout 300
+
+      - name: Smoke-test the binary
+        run: |
+          ./build/mcp-lldb --version
+          ./build/mcp-lldb --help
+
+  macos:
+    name: macOS (Homebrew LLVM)
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: brew install llvm boost nlohmann-json openssl ninja
+
+      - name: Allow debugging
+        run: sudo DevToolsSecurity -enable
+
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: macos
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          -DLLDB_ROOT="$(brew --prefix llvm)"
+          -DOPENSSL_ROOT_DIR="$(brew --prefix openssl)"
+
+      - name: Build
+        run: cmake --build build --parallel 4
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --timeout 300
+
+  format:
+    name: Format
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+      - run: pip install pre-commit
+      - run: pre-commit run --all-files --show-diff-on-failure
