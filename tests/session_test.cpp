@@ -17,9 +17,23 @@
 #include <unistd.h>
 #include <csignal>
 #endif
+#ifdef __APPLE__
+#include <crt_externs.h>
+#endif
 
 namespace mcp_lldb {
 namespace {
+
+#ifndef _WIN32
+/// The environment of this process, which macOS does not declare as environ.
+char** process_environment() {
+#ifdef __APPLE__
+    return *_NSGetEnviron();
+#else
+    return environ;
+#endif
+}
+#endif
 
 using nlohmann::json;
 using test::line_of;
@@ -352,7 +366,7 @@ class WaitingProcess {
    public:
     WaitingProcess() {
         char* const argv[] = {const_cast<char*>(sample_program()), const_cast<char*>("wait"), nullptr};
-        if (posix_spawn(&pid_, sample_program(), nullptr, nullptr, argv, environ) != 0) {
+        if (posix_spawn(&pid_, sample_program(), nullptr, nullptr, argv, process_environment()) != 0) {
             pid_ = 0;
         }
         // Give it time to reach its loop and allow tracing.
