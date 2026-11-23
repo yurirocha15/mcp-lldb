@@ -37,7 +37,11 @@ if(LLDB_LIBRARY_DIR AND NOT WIN32)
 endif()
 
 include(GoogleTest)
+# An empty DEBUGINFOD_URLS keeps LLDB from fetching debug information while the
+# sample program starts, so the tests do not depend on the network.
 gtest_discover_tests(
   mcp-lldb-tests DISCOVERY_TIMEOUT 60
   PROPERTIES
-  TIMEOUT 120)
+  TIMEOUT 120
+          ENVIRONMENT
+          "DEBUGINFOD_URLS=")

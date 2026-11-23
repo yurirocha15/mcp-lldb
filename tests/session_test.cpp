@@ -326,14 +326,10 @@ TEST_F(SessionTest, InterruptPausesARunningProcess) {
 
 TEST_F(SessionTest, BacktraceOfAllThreads) {
     session_->create_target(sample_program(), std::nullopt);
-    LaunchRequest request;
-    request.args = {"threads"};
-    session_->start_launch(request);
-    for (int i = 0; i < 2; ++i) {
-        session_->wait_for_stop(1);
-    }
-    session_->interrupt();
-    wait(10);
+    // Stopping in the worker thread guarantees that both threads exist, however long start-up takes.
+    break_at("spin_body");
+    const json report = launch({"threads"});
+    ASSERT_EQ(report["state"], "stopped") << report.dump();
     const json stacks = session_->backtrace(std::nullopt, 50, true);
     EXPECT_GE(stacks["threads"].size(), 2U) << stacks.dump();
     EXPECT_GE(session_->threads()["threads"].size(), 2U);
