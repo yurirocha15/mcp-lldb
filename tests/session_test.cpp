@@ -1,4 +1,4 @@
-// The session against a real LLDB and a real process: the sample program in fixtures/.
+// Tests of Session with the installed LLDB and the sample program in fixtures/.
 
 #include "session.hpp"
 #include "fixture.hpp"

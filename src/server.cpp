@@ -56,7 +56,7 @@ json timeout_property() {
                     "not stopped by then the tool returns and the process keeps running.");
 }
 
-// Arguments. The server checks them against the schema before a handler runs.
+// Argument accessors. The SDK validates arguments against the input schema before a handler runs.
 
 std::optional<std::string> string_arg(const json& args, const char* name) {
     if (const auto it = args.find(name); it != args.end() && it->is_string()) {
@@ -113,7 +113,7 @@ mcp::Tool tool(const char* name, const char* title, const char* description, jso
     return out;
 }
 
-/// Tells subscribers that the session's resources may have changed.
+/// Notifies subscribers that the session's resources may have changed.
 void notify_changed(mcp::Server& server) {
     for (const auto& uri : {g_STATUS_URI, g_BREAKPOINTS_URI, g_OUTPUT_URI}) {
         server.sync().notify_resource_updated(uri);
@@ -131,7 +131,7 @@ mcp::Task<json> wait_and_report(mcp::Context& ctx, Session& session, std::uint32
         }
         ++waited;
         if (ctx.is_cancelled()) {
-            // The client gave up on the call: leave the process paused rather than running.
+            // The call was cancelled: interrupt the process so that it is left stopped, not running.
             try {
                 session.interrupt();
             } catch (const ToolError&) {

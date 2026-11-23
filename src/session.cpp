@@ -25,9 +25,9 @@ namespace {
 
 /// Bytes of process output kept; older output is dropped first.
 constexpr std::size_t g_OUTPUT_LIMIT = std::size_t{1} << 20;
-/// Bytes of new output a stop report carries; the output tool returns more.
+/// Maximum bytes of new output in a stop report; the output tool returns more.
 constexpr std::size_t g_REPORT_OUTPUT_LIMIT = 8192;
-/// Bytes of output the output tool returns at most.
+/// Maximum bytes of output the output tool returns.
 constexpr std::size_t g_OUTPUT_TOOL_LIMIT = 65536;
 constexpr std::size_t g_READ_CHUNK = 4096;
 /// Seconds to wait for a process to stop after an interrupt, kill or detach.
@@ -46,9 +46,10 @@ bool file_exists(const std::filesystem::path& path) {
     return std::filesystem::exists(path, error);
 }
 
-/// LLDB on Linux starts processes through lldb-server, which it looks for next to liblldb. Debian
-/// and Ubuntu install liblldb elsewhere, so point LLDB at the lldb-server of the LLVM install the
-/// build found, or at one that matches the library's version.
+/// Sets LLDB_DEBUGSERVER_PATH when it is unset. LLDB looks for its debug server next to liblldb,
+/// which Debian and Ubuntu install elsewhere. Candidates: the lldb-server of the LLVM installation
+/// found at build time (MCP_LLDB_SERVER_HINT) and, on macOS, the Xcode and Command Line Tools
+/// debugserver.
 void locate_debug_server() {
     if (std::getenv("LLDB_DEBUGSERVER_PATH") != nullptr) {
         return;
@@ -149,8 +150,9 @@ Session::Session() : debugger_(lldb::SBDebugger::Create(false)), listener_("mcp-
     }
     debugger_.SetAsync(true);
     debugger_.SetUseColor(false);
-    // The server's standard input and output may carry the protocol: LLDB must neither read the
-    // one nor write messages of its own (such as a watchpoint's old and new value) to the other.
+    // stdin and stdout may carry MCP messages, so LLDB's input and output go to the null device.
+    // Otherwise LLDB could read stdin or write its own messages, such as watchpoint value changes,
+    // to stdout.
 #ifdef _WIN32
     const char* null_device = "NUL";
 #else
@@ -176,7 +178,7 @@ Session::~Session() {
             debugger_.DeleteTarget(target_);
         }
     } catch (...) {
-        // Nothing can be reported while the server shuts down.
+        // Errors during shutdown cannot be reported.
     }
     lldb::SBDebugger::Destroy(debugger_);
 }
@@ -249,7 +251,7 @@ lldb::SBFrame Session::frame_for(const FrameRef& where) {
 }
 
 void Session::adopt_selected_target() {
-    // The command tool can create or select another target; follow it.
+    // The command tool can create or select another target; use the debugger's selected target.
     lldb::SBTarget selected = debugger_.GetSelectedTarget();
     if (selected.IsValid() && selected != target_) {
         target_ = selected;
@@ -439,9 +441,9 @@ void Session::start_attach(const AttachRequest& request) {
     }
     attached_ = true;
     listen_to(process);
-    // LLDB reports the stop that ends an attach through the attach call, not as an event: the
-    // process is stopped when Attach() returns, or (waiting for a process to start) once its state
-    // says so.
+    // LLDB reports the stop that completes an attach through Attach(), not as an event: the process
+    // is stopped when Attach() returns or, when waiting for the process to start, once its state is
+    // stopped.
     attaching_ = true;
     if (is_stopped(process.GetState())) {
         attaching_ = false;
@@ -564,10 +566,10 @@ bool Session::wait_for_stop(std::uint32_t seconds) {
         if (!running_) {
             return true;
         }
-        // The events of a process the command tool started go to LLDB's own listener; its state
-        // tells when it stopped. A process the session started reports through the session's
-        // listener, whose events also tell a stop from one LLDB resumes at once (a breakpoint
-        // whose condition is false), which the state alone does not.
+        // A process started by the command tool sends its events to LLDB's own listener, so only
+        // its state shows a stop. A process started by the session sends events to the session's
+        // listener, which also distinguishes a stop from one LLDB resumes at once (a breakpoint
+        // whose condition is false); the state alone does not.
         const auto state = process.GetState();
         if (is_finished(state)) {
             running_ = false;
@@ -608,7 +610,7 @@ bool Session::wait_for_stop(std::uint32_t seconds) {
 }
 
 void Session::append_output(const char* data, std::size_t size) {
-    // The process writes to a pseudo-terminal, which turns each newline into CR LF: undo that.
+    // The process writes to a pseudo-terminal, which converts LF to CR LF; convert it back.
     for (std::size_t i = 0; i < size; ++i) {
         const char c = data[i];
         if (pending_cr_) {

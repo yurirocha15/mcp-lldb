@@ -1,4 +1,4 @@
-// The server binary end to end: an MCP client launches it over stdio, as an agent's client does.
+// End-to-end tests of the server binary over stdio.
 
 #include "fixture.hpp"
 
@@ -82,8 +82,8 @@ TEST_F(ServerTest, DebugsAProgramOverStdio) {
         call("set_breakpoint", {{"file", "sample.cpp"}, {"line", line_of("add_body")}});
     EXPECT_EQ(breakpoint["locations"].size(), 1U) << breakpoint.dump();
 
-    // The program prints before it stops; its output must not reach the server's stdout, which
-    // carries the protocol.
+    // The program prints before it stops; that output must not reach the server's stdout, which
+    // carries MCP messages.
     const json stop = call("launch", {});
     EXPECT_EQ(stop["state"], "stopped") << stop.dump();
     EXPECT_EQ(stop["thread"]["stop_reason"], "breakpoint") << stop.dump();
@@ -101,8 +101,8 @@ TEST_F(ServerTest, DebugsAProgramOverStdio) {
 }
 
 TEST_F(ServerTest, WatchpointHitsKeepTheProtocolIntact) {
-    // LLDB describes a watchpoint hit (old and new value) on its own output, which must not be the
-    // server's standard output.
+    // LLDB prints watchpoint hits (old and new value) to its output, which must not be the
+    // server's stdout.
     connect();
     call("create_target", {{"program", sample_program()}});
     call("set_breakpoint", {{"file", "sample.cpp"}, {"line", line_of("call_add")}});

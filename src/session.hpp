@@ -16,7 +16,7 @@
 
 namespace mcp_lldb {
 
-/// A request the session cannot carry out. Its message is the tool's error result.
+/// Thrown for a request the session cannot carry out; the message becomes the tool's error result.
 class ToolError : public std::runtime_error {
    public:
     using std::runtime_error::runtime_error;
@@ -77,8 +77,8 @@ enum class StepKind : std::uint8_t {
     eInstructionOver,
 };
 
-/// Which frame an inspection refers to: a thread index ID (as in "thread #2") and a frame
-/// index, the selected thread and its frame 0 when not given.
+/// A frame to inspect: a thread index ID (as in "thread #2") and a frame index. Defaults to the
+/// selected thread and frame 0.
 struct FrameRef {
     std::optional<std::uint32_t> thread;
     std::optional<std::uint32_t> frame;
@@ -96,10 +96,11 @@ class Session {
     /// Loads @p program as the target, replacing the current one (killing a process the session
     /// launched, detaching from one it attached to).
     nlohmann::json create_target(const std::string& program, const std::optional<std::string>& arch);
-    /// Loads @p program and the core file @p core, to inspect a crash after the fact.
+    /// Loads @p program with the core file @p core for post-mortem inspection.
     nlohmann::json load_core(const std::string& program, const std::string& core);
 
-    // Running. Each start_* call returns once LLDB has the request; wait_for_stop() waits.
+    // Execution control. start_* calls return once LLDB accepts the request; wait_for_stop() waits
+    // for the stop.
 
     void start_launch(const LaunchRequest& request);
     void start_attach(const AttachRequest& request);
@@ -119,8 +120,8 @@ class Session {
     /// The report for a process still running after @p waited_seconds.
     nlohmann::json running_report(std::uint32_t waited_seconds);
 
-    /// Kills or detaches the process: "kill", "detach", or by default whichever undoes how the
-    /// session got it.
+    /// Kills or detaches the process: "kill", "detach", or by default kill a launched process and
+    /// detach from an attached one.
     nlohmann::json terminate(const std::optional<std::string>& action);
     /// The target, process state, selected location and breakpoint counts.
     nlohmann::json status();
@@ -185,7 +186,7 @@ class Session {
     bool core_ = false;
     /// Whether the process's events reach listener_ (it was launched or attached by the session).
     bool events_hooked_ = false;
-    /// Whether an attach has not stopped the process yet.
+    /// True while an attach is in progress and the process has not stopped yet.
     bool attaching_ = false;
     /// Whether the last byte of output was a CR not yet known to start a CR LF pair.
     bool pending_cr_ = false;

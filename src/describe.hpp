@@ -16,7 +16,7 @@ std::string text_of(const char* text);
 /// @p address as 0x-prefixed hexadecimal.
 std::string hex_address(std::uint64_t address);
 
-/// The full path of @p file, or an empty string when it names nothing.
+/// The full path of @p file, or an empty string when @p file is invalid.
 std::string path_of(const lldb::SBFileSpec& file);
 
 /// The name of a process state, such as "stopped" or "exited".
@@ -49,7 +49,7 @@ struct ValueLimits {
 /// written gets `"more_children": true`.
 nlohmann::json value_json(lldb::SBValue value, const ValueLimits& limits);
 
-/// As value_json() above, counting written values in @p nodes across several calls.
+/// Like value_json() above, adding the number of written values to @p nodes across calls.
 nlohmann::json value_json(lldb::SBValue value, const ValueLimits& limits, std::uint32_t& nodes);
 
 }  // namespace mcp_lldb

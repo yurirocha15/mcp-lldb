@@ -8,7 +8,7 @@ namespace mcp_lldb::test {
 /// The path of the program the tests debug.
 inline const char* sample_program() { return MCP_LLDB_SAMPLE_PROGRAM; }
 
-/// The path of its source file.
+/// The path of the sample program's source file.
 inline const char* sample_source() { return MCP_LLDB_SAMPLE_SOURCE; }
 
 /// The path of the server binary.

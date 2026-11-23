@@ -30,7 +30,7 @@ nlohmann::json value_json_at(lldb::SBValue value, const ValueLimits& limits, std
     if (!value.MightHaveChildren()) {
         return out;
     }
-    // A null pointer has nothing to show below it.
+    // A null pointer has no children to expand.
     if (value.GetType().IsPointerType() && value.GetValueAsUnsigned(1) == 0) {
         return out;
     }

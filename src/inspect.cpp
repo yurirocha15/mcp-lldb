@@ -414,7 +414,7 @@ nlohmann::json Session::disassemble(const std::optional<std::string>& address,
     const std::uint32_t total = static_cast<std::uint32_t>(instructions.GetSize());
     std::uint32_t first = 0;
     if (pc != LLDB_INVALID_ADDRESS && total > count) {
-        // Show the instructions around the pc: a quarter before it, the rest after.
+        // Disassemble around the pc: a quarter of the instructions before it, the rest after.
         for (std::uint32_t i = 0; i < total; ++i) {
             if (load_address(instructions.GetInstructionAtIndex(i).GetAddress(), target) == pc) {
                 first = i > count / 4 ? i - count / 4 : 0;
@@ -442,7 +442,7 @@ nlohmann::json Session::source(const std::optional<std::string>& file,
     if (file) {
         path = *file;
         if (!std::ifstream(path).good() && target_.IsValid()) {
-            // A file name as debug information records it: find its full path.
+            // Resolve the file name, as the debug information records it, to its full path.
             lldb::SBSymbolContextList units =
                 target_.FindCompileUnits(lldb::SBFileSpec(path.c_str(), false));
             for (std::uint32_t i = 0; i < units.GetSize(); ++i) {

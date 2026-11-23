@@ -22,14 +22,14 @@ int main(int argc, char** argv) {
     const mcp_lldb::Options& options = *parsed.options;
 
     try {
-        // Destroyed in reverse order: the server stops, the LLDB thread ends, the session kills or
-        // detaches its process, and LLDB shuts down last.
+        // Destruction runs in reverse order: server, LLDB thread, session (which kills or detaches
+        // its process), then LLDB itself.
         const mcp_lldb::LldbLibrary lldb_library;
         mcp_lldb::Session session;
 
-        // Every handler runs on this one thread, the only one that touches LLDB. Execution tools
-        // block it while they wait for the process, and the server's own loop keeps answering
-        // pings and cancellations meanwhile.
+        // All handlers run on this thread, the only one that calls LLDB. Execution tools block it
+        // while waiting for the process; the server's own loop still answers pings and
+        // cancellations.
         mcp::Runtime lldb_thread;
         lldb_thread.start(1);
 
