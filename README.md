@@ -75,13 +75,16 @@ cmake --build --preset conan-release
 
 ## Use it from an MCP client
 
-Claude Code:
+The client starts the server and talks to it over standard input and output.
+[add-mcp](https://github.com/neon-solutions/add-mcp), which runs on Node.js, adds the server to MCP
+clients such as Claude Code, Codex, Cursor, Gemini CLI, OpenCode, VS Code and Zed. It finds the
+clients installed on this machine and asks which ones to set up:
 
 ```bash
-claude mcp add lldb -- /path/to/mcp-lldb
+npx add-mcp /path/to/mcp-lldb --name lldb -g
 ```
 
-Claude Desktop, Cursor and other clients that read an `mcpServers` file:
+Give the absolute path of the binary. Clients that read an `mcpServers` file take this entry:
 
 ```json
 {
